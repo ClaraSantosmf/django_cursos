@@ -1,7 +1,7 @@
-from django.shortcuts import reverse, render
+from django.shortcuts import reverse, render, get_object_or_404
 from django.views.generic.edit import CreateView, UpdateView
-
-from .models import Curso
+from django.db.utils import IntegrityError
+from .models import Curso, CursosLike
 from .forms import CursoModelForm
 
 
@@ -42,3 +42,18 @@ class NovoCursoView(CursoMixin, CreateView):
 
 class AlterarCursoView(CursoMixin, UpdateView):
     template_name = "cursos/curso_alterar.html"
+
+
+def like_curso(request, pk):
+    curso = get_object_or_404(Curso, id = pk)
+    try:
+        CursosLike.objects.create(user = request.user, curso =curso)
+        context = {
+            'mensagem':f'{curso.autor} Agradece!'
+        }
+    except IntegrityError as error:
+        CursosLike.objects.get(user = request.user,curso = curso).delete()
+        context ={
+            'mensagem': ':('
+        }
+    return render(request, 'cursos/likeconcluido.html', context)
